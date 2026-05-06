@@ -1,16 +1,46 @@
-# React + Vite
+# UPSC Preparation Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, responsive web application designed to help UPSC aspirants track their progress, access study materials, and prepare for exams with a sleek dashboard and landing page.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Personalized Dashboard**: Track your readiness score and study progress.
+- **Modern UI**: Built with React and Vite for a lightning-fast experience.
+- **Responsive Design**: Fully optimized for mobile, tablet, and desktop.
+- **Figma Parity**: Implemented with high fidelity to professional design specifications.
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend**: React.js
+- **Bundler**: Vite
+- **Styling**: CSS (Vanilla)
+- **Design**: Figma Integrated
 
-## Expanding the ESLint configuration
+## 📦 Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## 👥 Contributing
+
+This is a team project. Please ensure you:
+1. Create a feature branch for your changes.
+2. Follow the established styling patterns.
+- Ensure all components are responsive.
