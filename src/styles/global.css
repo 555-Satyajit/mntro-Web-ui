@@ -1,0 +1,50 @@
+:root {
+  /* Brand Palette */
+  --primary-base: #1A7194;
+  --primary-light: #37A7D5;
+  --primary-gradient: linear-gradient(135deg, #1A7194 0%, #37A7D5 100%);
+  
+  /* Neutral Palette */
+  --white: #FFFFFF;
+  --bg-subtle: #FAFAFA;
+  --bg-sidebar: #FBFBFB;
+  --border-light: #E1E7EA;
+  --text-main: #2A2A2A;
+  --text-secondary: #49546C;
+  --text-muted: #7B869B;
+  
+  /* Semantic Palette */
+  --error: #FF4D4F;
+  --warning: #FAAD14;
+  --success: #52C41A;
+  
+  /* Fonts */
+  --font-main: 'Source Sans 3', sans-serif;
+  --font-content: 'Inter', sans-serif;
+  --font-title: 'Rubik', sans-serif;
+
+  color-scheme: light;
+  color: var(--text-main);
+  background-color: var(--white);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font-main);
+  background-color: var(--white);
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
