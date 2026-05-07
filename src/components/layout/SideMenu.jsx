@@ -1,10 +1,12 @@
 import React from 'react';
 import { Box, Divider, Avatar, Typography, ButtonBase } from '@mui/material';
+import { useLocation, useNavigate } from 'react-router-dom';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
 
-const HomeIcon = () => (
+const HomeIcon = ({ active }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20.8319 8.01002L14.2819 2.77002C13.0019 1.75002 11.0019 1.74002 9.73192 2.76002L3.18192 8.01002C2.24192 8.76002 1.67192 10.26 1.87192 11.44L3.13192 18.98C3.42192 20.67 4.99192 22 6.70192 22H17.3019C18.9919 22 20.5919 20.64 20.8819 18.97L22.1419 11.43C22.3219 10.26 21.7519 8.76002 20.8319 8.01002ZM12.7519 18C12.7519 18.41 12.4119 18.75 12.0019 18.75C11.5919 18.75 11.2519 18.41 11.2519 18V15C11.2519 14.59 11.5919 14.25 12.0019 14.25C12.4119 14.25 12.7519 14.59 12.7519 15V18Z" fill="#37A7D5"/>
+    <path d="M20.8319 8.01002L14.2819 2.77002C13.0019 1.75002 11.0019 1.74002 9.73192 2.76002L3.18192 8.01002C2.24192 8.76002 1.67192 10.26 1.87192 11.44L3.13192 18.98C3.42192 20.67 4.99192 22 6.70192 22H17.3019C18.9919 22 20.5919 20.64 20.8819 18.97L22.1419 11.43C22.3219 10.26 21.7519 8.76002 20.8319 8.01002ZM12.7519 18C12.7519 18.41 12.4119 18.75 12.0019 18.75C11.5919 18.75 11.2519 18.41 11.2519 18V15C11.2519 14.59 11.5919 14.25 12.0019 14.25C12.4119 14.25 12.7519 14.59 12.7519 15V18Z" fill={active ? "#37A7D5" : "#888E9D"}/>
   </svg>
 );
 
@@ -81,8 +83,9 @@ const LogoutIcon = () => (
   </svg>
 );
 
-const SidebarIcon = ({ icon: Icon, label, active = false, hasBackground = false, color = '#7B869B', isCollapsed }) => (
+const SidebarIcon = ({ icon: Icon, label, active = false, hasBackground = false, color = '#7B869B', isCollapsed, onClick }) => (
   <ButtonBase
+    onClick={onClick}
     sx={{
       width: isCollapsed ? 36 : '100%',
       height: 42,
@@ -103,7 +106,7 @@ const SidebarIcon = ({ icon: Icon, label, active = false, hasBackground = false,
     }}
   >
     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 24 }}>
-      {typeof Icon === 'function' ? <Icon /> : <Icon size={20} strokeWidth={1.8} />}
+      {typeof Icon === 'function' ? <Icon active={active} /> : <Icon size={20} strokeWidth={1.8} />}
     </Box>
     {!isCollapsed && (
       <Typography
@@ -137,6 +140,9 @@ const ToggleIcon = ({ isCollapsed }) => (
 );
 
 const SideMenu = ({ isCollapsed, onToggle }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   return (
     <Box
       sx={{
@@ -205,7 +211,14 @@ const SideMenu = ({ isCollapsed, onToggle }) => {
 
       {/* Main Nav Group */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', width: '100%' }}>
-        <SidebarIcon icon={HomeIcon} label="Home" active hasBackground isCollapsed={isCollapsed} />
+        <SidebarIcon 
+          icon={HomeIcon} 
+          label="Home" 
+          active={location.pathname === '/' || location.pathname === ''} 
+          hasBackground={location.pathname === '/' || location.pathname === ''}
+          isCollapsed={isCollapsed} 
+          onClick={() => navigate('/')}
+        />
         <SidebarIcon icon={SearchIcon} label="Search" isCollapsed={isCollapsed} />
         <SidebarIcon icon={BookIcon} label="Syllabus" isCollapsed={isCollapsed} />
         <SidebarIcon icon={CalendarIcon} label="Calendar" isCollapsed={isCollapsed} />

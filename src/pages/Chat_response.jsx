@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLottie } from 'lottie-react';
+import foldersAnimation from '../assets/Folders.json';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -49,6 +52,51 @@ const SourceArrow = () => (
   </svg>
 );
 
+// Typewriter Effect Component
+const Typewriter = ({ text, delay = 15, onComplete, start = true }) => {
+  const [currentText, setCurrentText] = useState('');
+  const [hasFinished, setHasFinished] = useState(false);
+  
+  useEffect(() => {
+    if (!start || !text || hasFinished) return;
+
+    const intervalId = setInterval(() => {
+      setCurrentText(prev => {
+        const nextIndex = prev.length + 1;
+        const nextText = text.slice(0, nextIndex);
+        
+        if (nextIndex >= text.length) {
+          clearInterval(intervalId);
+          setHasFinished(true);
+          // Use a small timeout to ensure the state update is processed before calling onComplete
+          setTimeout(() => {
+            if (onComplete) onComplete();
+          }, 10);
+        }
+        return nextText;
+      });
+    }, delay);
+    
+    return () => clearInterval(intervalId);
+  }, [start, text, delay, onComplete, hasFinished]);
+
+  if (!start) return null;
+  return <>{hasFinished ? text : currentText}</>;
+};
+
+const TypedTypography = ({ children, delay = 5, onComplete, start = true, ...props }) => {
+  // Ensure children is treated as a string for the typewriter effect
+  const textContent = React.Children.toArray(children).join('');
+  
+  return (
+    <Typography {...props}>
+      {start ? (
+        <Typewriter text={textContent} delay={delay} onComplete={onComplete} start={start} />
+      ) : null}
+    </Typography>
+  );
+};
+
 // Keyword Arrow Icon
 const KeywordArrow = () => (
   <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginLeft: '9px' }}>
@@ -57,9 +105,65 @@ const KeywordArrow = () => (
 );
 
 const ChatResponse = () => {
+  const location = useLocation();
+  const initialQuestion = location.state?.question || "I want to know more about national budget";
+  
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [toggleType, setToggleType] = useState('prelims');
+  const [liked, setLiked] = useState(false);
+  const [disliked, setDisliked] = useState(false);
+  
+  const [isGenerating, setIsGenerating] = useState(true);
+  const [visibleSections, setVisibleSections] = useState(0);
+  const [followUpValue, setFollowUpValue] = useState('');
+
+  const handleFollowUpSubmit = () => {
+    if (followUpValue.trim()) {
+      // In a real app, this would trigger a new AI response
+      console.log('Follow up:', followUpValue);
+      setFollowUpValue('');
+    }
+  };
+
+  const handleFollowUpKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleFollowUpSubmit();
+    }
+  };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    // Simulate initial "thinking" time
+    const timer = setTimeout(() => {
+      setIsGenerating(false);
+      setVisibleSections(1); // Start the first line
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleNext = useCallback(() => {
+    setVisibleSections(prev => prev + 1);
+  }, []);
+
+  const lottieOptions = {
+    animationData: foldersAnimation,
+    loop: true,
+  };
+
+  const { View: LottieView } = useLottie(lottieOptions);
+
+  const handleLike = () => {
+    setLiked(!liked);
+    if (!liked) setDisliked(false);
+  };
+
+  const handleDislike = () => {
+    setDisliked(!disliked);
+    if (!disliked) setLiked(false);
+  };
 
   const prelimsQuestions = [
     {
@@ -132,7 +236,7 @@ const ChatResponse = () => {
               color: '#2A2A2A',
               fontFamily: "'DM Sans', sans-serif"
             }}>
-              I want to know more about national budget
+              {initialQuestion}
             </Typography>
           </Box>
 
@@ -140,21 +244,80 @@ const ChatResponse = () => {
           <Box sx={{ display: 'flex', alignItems: 'flex-start', overflow: 'visible' }}>
             {/* Main Response Area */}
             <Box sx={{ flexGrow: 1, mr: '24px' }}>
-              {/* Bot Response - First line of response */}
+              {isGenerating ? (
+                <Stack direction="row" spacing={3} sx={{ mb: 4, ml: '-48px', mt: 3, alignItems: 'center' }}>
+                  <Box sx={{ 
+                    width: 32, 
+                    height: 32, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    position: 'relative'
+                  }}>
+                    {/* Small Lottie Loader - perfectly aligned with the future star icon */}
+                    <Box sx={{ 
+                      width: 100, 
+                      height: 100, 
+                      flexShrink: 0,
+                      position: 'absolute',
+                      left: '50%',
+                      top: '50%',
+                      transform: 'translate(-50%, -50%)'
+                    }}>
+                      {LottieView}
+                    </Box>
+                  </Box>
+
+                  <Typography sx={{ 
+                    color: '#7B869B', 
+                    fontSize: '16px', 
+                    fontWeight: 500,
+                    fontFamily: "'Source Sans 3', sans-serif",
+                    fontStyle: 'italic',
+                    mt: '12px' // Push down to match the visual center of the folder icon
+                  }}>
+                    Mntor is thinking...
+                  </Typography>
+                </Stack>
+              ) : (
+                <>
+                  {/* Bot Response - First line of response */}
+                  <Box sx={{ 
+                    mb: 3, 
+                    opacity: visibleSections >= 1 ? 1 : 0, 
+                    transform: visibleSections >= 1 ? 'translateY(0)' : 'translateY(10px)',
+                    transition: 'all 0.5s ease-out'
+                  }}>
               <Stack direction="row" spacing={2} sx={{ mb: 4, ml: '-48px' }}>
                 <Avatar sx={{ bgcolor: '#F99710', width: 32, height: 32 }}>
                   <AutoAwesomeIcon sx={{ fontSize: 18 }} />
                 </Avatar>
-                <Typography sx={{ fontSize: '15px', color: '#2A2A2A', lineHeight: 1.6, fontFamily: "'DM Sans', sans-serif" }}>
+                <TypedTypography 
+                  start={visibleSections >= 1}
+                  onComplete={handleNext}
+                  sx={{ fontSize: '15px', color: '#2A2A2A', lineHeight: 1.6, fontFamily: "'DM Sans', sans-serif" }}
+                >
                   The National Budget is a critical economic instrument that reflects the government's policy priorities and fiscal strategy. Analyzing its components and implications provides insights into the economic health and governance of a nation.
-                </Typography>
+                </TypedTypography>
               </Stack>
+              </Box>
 
               {/* Learn This Topic Section */}
-              <Box>
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+              <Box sx={{ 
+                opacity: visibleSections >= 2 ? 1 : 0, 
+                transform: visibleSections >= 2 ? 'translateY(0)' : 'translateY(10px)',
+                transition: 'all 0.5s ease-out'
+              }}>
+                <Stack sx={{ flexDirection: 'row', gap: 1, alignItems: 'center', mb: 2 }}>
                   <MenuBookIcon sx={{ fontSize: 20, color: '#2A2A2A' }} />
-                  <Typography sx={{ fontWeight: 600, fontSize: '18px', fontFamily: "'DM Sans', sans-serif" }}>Learn This Topic</Typography>
+                  <TypedTypography 
+                    start={visibleSections >= 2}
+                    onComplete={handleNext}
+                    sx={{ fontWeight: 600, fontSize: '18px', fontFamily: "'DM Sans', sans-serif" }}
+                  >
+                    Learn This Topic
+                  </TypedTypography>
                 </Stack>
 
                 <Paper sx={{
@@ -172,25 +335,33 @@ const ChatResponse = () => {
                 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                     <Box>
-                      <Typography sx={{
-                        fontFamily: "'Source Sans 3', sans-serif",
-                        fontWeight: 400,
-                        fontSize: '14px',
-                        lineHeight: '100%',
-                        color: '#7B869B',
-                        mb: '2px'
-                      }}>
+                      <TypedTypography 
+                        start={visibleSections >= 3}
+                        onComplete={handleNext}
+                        sx={{
+                          fontFamily: "'Source Sans 3', sans-serif",
+                          fontWeight: 400,
+                          fontSize: '14px',
+                          lineHeight: '100%',
+                          color: '#7B869B',
+                          mb: '2px'
+                        }}
+                      >
                         Indian Economy
-                      </Typography>
-                      <Typography sx={{
-                        fontFamily: "'Source Sans 3', sans-serif",
-                        fontWeight: 600,
-                        fontSize: '24px',
-                        lineHeight: '120%',
-                        color: '#2A2A2A'
-                      }}>
+                      </TypedTypography>
+                      <TypedTypography 
+                        start={visibleSections >= 4}
+                        onComplete={handleNext}
+                        sx={{
+                          fontFamily: "'Source Sans 3', sans-serif",
+                          fontWeight: 600,
+                          fontSize: '24px',
+                          lineHeight: '120%',
+                          color: '#2A2A2A'
+                        }}
+                      >
                         Govt. Administrations
-                      </Typography>
+                      </TypedTypography>
                     </Box>
                     <Button
                       variant="contained"
@@ -278,131 +449,232 @@ const ChatResponse = () => {
                     The Budget 2025 has emerged as a transformative blueprint aimed at driving economic growth, fostering inclusivity, and embracing sustainability. Presented amidst evolving global challenges and domestic priorities, this budget focuses on empowering key sectors such as infrastructure, healthcare, education, and green energy. A significant increase in capital expenditure has been allocated to modernize...
                   </Typography>
                 </Paper>
+              </Box>
 
-                {/* New Content 12px below the box */}
-                <Box sx={{ mt: '12px' }}>
+              {/* Key Aspects Section */}
+              <Box sx={{ 
+                mt: '12px',
+                opacity: visibleSections >= 3 ? 1 : 0, 
+                transform: visibleSections >= 3 ? 'translateY(0)' : 'translateY(10px)',
+                transition: 'all 0.5s ease-out'
+              }}>
                   {/* Key Aspects */}
-                  <Typography sx={{
-                    fontFamily: "'Source Sans 3', sans-serif",
-                    fontWeight: 600,
-                    fontSize: '18px',
-                    lineHeight: '160%',
-                    color: '#2A2A2A',
-                    mb: '8px'
-                  }}>
+                  <TypedTypography 
+                    start={visibleSections >= 5}
+                    onComplete={handleNext}
+                    sx={{
+                      fontFamily: "'Source Sans 3', sans-serif",
+                      fontWeight: 600,
+                      fontSize: '18px',
+                      lineHeight: '160%',
+                      color: '#2A2A2A',
+                      mb: '8px'
+                    }}
+                  >
                     Key Aspects
-                  </Typography>
+                  </TypedTypography>
 
                   <Stack spacing={0.5} sx={{ mb: 3 }}>
-                    <Typography sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}>
+                    <TypedTypography 
+                      start={visibleSections >= 6}
+                      onComplete={handleNext}
+                      sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}
+                    >
                       1. Definition: A national budget outlines the government's planned revenue and expenditure for a specific fiscal year.
-                    </Typography>
+                    </TypedTypography>
 
                     <Box>
-                      <Typography sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}>
+                      <TypedTypography 
+                        start={visibleSections >= 7}
+                        onComplete={handleNext}
+                        sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}
+                      >
                         2. Objectives:
-                      </Typography>
+                      </TypedTypography>
                       <Box sx={{ pl: 2.5 }}>
-                        <Typography sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}>
+                        <TypedTypography 
+                          start={visibleSections >= 8}
+                          onComplete={handleNext}
+                          sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}
+                        >
                           • Economic Growth: Stimulating investment and consumption.
-                        </Typography>
-                        <Typography sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}>
+                        </TypedTypography>
+                        <TypedTypography 
+                          start={visibleSections >= 9}
+                          onComplete={handleNext}
+                          sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}
+                        >
                           • Income Redistribution: Promoting social equity through various programmes.
-                        </Typography>
-                        <Typography sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}>
+                        </TypedTypography>
+                        <TypedTypography 
+                          start={visibleSections >= 10}
+                          onComplete={handleNext}
+                          sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}
+                        >
                           • Fiscal Discipline: Ensuring sustainable financial health.
-                        </Typography>
+                        </TypedTypography>
                       </Box>
                     </Box>
 
                     <Box>
-                      <Typography sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}>
+                      <TypedTypography 
+                        start={visibleSections >= 11}
+                        onComplete={handleNext}
+                        sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}
+                      >
                         3. Components:
-                      </Typography>
+                      </TypedTypography>
                       <Box sx={{ pl: 2.5 }}>
-                        <Typography sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}>
+                        <TypedTypography 
+                          start={visibleSections >= 12}
+                          onComplete={handleNext}
+                          sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}
+                        >
                           • Revenue: Income generated from taxes, fees, and other sources.
-                        </Typography>
-                        <Typography sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}>
+                        </TypedTypography>
+                        <TypedTypography 
+                          start={visibleSections >= 13}
+                          onComplete={handleNext}
+                          sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}
+                        >
                           • Expenditure: Money spent on public services, infrastructure, defense, etc.
-                        </Typography>
-                        <Typography sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}>
+                        </TypedTypography>
+                        <TypedTypography 
+                          start={visibleSections >= 14}
+                          onComplete={handleNext}
+                          sx={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', lineHeight: '160%', color: '#2A2A2A' }}
+                        >
                           • Deficit/Surplus: The balance between revenue and expenditure.
-                        </Typography>
+                        </TypedTypography>
                       </Box>
                     </Box>
                   </Stack>
 
                   {/* National Budget Cycle */}
-                  <Typography sx={{
-                    fontFamily: "'Source Sans 3', sans-serif",
-                    fontWeight: 600,
-                    fontSize: '18px',
-                    lineHeight: '160%',
-                    color: '#2A2A2A',
-                    mb: '8px'
-                  }}>
+                  <TypedTypography 
+                    start={visibleSections >= 15}
+                    onComplete={handleNext}
+                    sx={{
+                      fontFamily: "'Source Sans 3', sans-serif",
+                      fontWeight: 600,
+                      fontSize: '18px',
+                      lineHeight: '160%',
+                      color: '#2A2A2A',
+                      mb: '8px'
+                    }}
+                  >
                     National Budget Cycle
-                  </Typography>
+                  </TypedTypography>
 
                   <Stack spacing={0.5} sx={{ mb: 3 }}>
-                    <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}>
+                    <TypedTypography 
+                      start={visibleSections >= 16}
+                      onComplete={handleNext}
+                      sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}
+                    >
                       1. Preparation: Departments propose budgets.
-                    </Typography>
-                    <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}>
+                    </TypedTypography>
+                    <TypedTypography 
+                      start={visibleSections >= 17}
+                      onComplete={handleNext}
+                      sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}
+                    >
                       2. Presentation: Introducing the budget in the Parliament.
-                    </Typography>
-                    <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}>
+                    </TypedTypography>
+                    <TypedTypography 
+                      start={visibleSections >= 18}
+                      onComplete={handleNext}
+                      sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}
+                    >
                       3. Approval: Government seeks approval from the legislature.
-                    </Typography>
-                    <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}>
+                    </TypedTypography>
+                    <TypedTypography 
+                      start={visibleSections >= 19}
+                      onComplete={handleNext}
+                      sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}
+                    >
                       4. Implementation: Execution of the budget allocations.
-                    </Typography>
-                    <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}>
+                    </TypedTypography>
+                    <TypedTypography 
+                      start={visibleSections >= 20}
+                      onComplete={handleNext}
+                      sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}
+                    >
                       5. Review and Evaluation: Assessing the outcomes compared to targets.
-                    </Typography>
+                    </TypedTypography>
                   </Stack>
 
                   {/* Recent Trends */}
-                  <Typography sx={{
-                    fontFamily: "'Source Sans 3', sans-serif",
-                    fontWeight: 600,
-                    fontSize: '18px',
-                    lineHeight: '160%',
-                    letterSpacing: '0%',
-                    color: '#2A2A2A',
-                    mb: '8px'
-                  }}>
+                  <TypedTypography 
+                    start={visibleSections >= 21}
+                    onComplete={handleNext}
+                    sx={{
+                      fontFamily: "'Source Sans 3', sans-serif",
+                      fontWeight: 600,
+                      fontSize: '18px',
+                      lineHeight: '160%',
+                      letterSpacing: '0%',
+                      color: '#2A2A2A',
+                      mb: '8px'
+                    }}
+                  >
                     Recent Trends IN National Budgets(Hypothetical Data)
-                  </Typography>
+                  </TypedTypography>
 
                   <Stack spacing={0.5} sx={{ mb: 3 }}>
-                    <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}>
+                    <TypedTypography 
+                      start={visibleSections >= 22}
+                      onComplete={handleNext}
+                      sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}
+                    >
                       1. Budget Allocation for Health: Increase from previous year.
-                    </Typography>
-                    <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}>
+                    </TypedTypography>
+                    <TypedTypography 
+                      start={visibleSections >= 23}
+                      onComplete={handleNext}
+                      sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}
+                    >
                       2. Education Funding: Maintaining or enhancing investment.
-                    </Typography>
-                    <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}>
+                    </TypedTypography>
+                    <TypedTypography 
+                      start={visibleSections >= 24}
+                      onComplete={handleNext}
+                      sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}
+                    >
                       3. Infrastructure Development: Allocation towards roads, railways, etc.
-                    </Typography>
-                    <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}>
+                    </TypedTypography>
+                    <TypedTypography 
+                      start={visibleSections >= 25}
+                      onComplete={handleNext}
+                      sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '14px', lineHeight: '160%', letterSpacing: '0%', color: '#2A2A2A' }}
+                    >
                       4. Social Welfare Schemes: Expansion of existing schemes.
-                    </Typography>
+                    </TypedTypography>
                   </Stack>
 
-                  {/* Comparative Analysis */}
-                  <Typography sx={{
-                    fontFamily: "'Source Sans 3', sans-serif",
-                    fontWeight: 600,
-                    fontSize: '18px',
-                    lineHeight: '160%',
-                    letterSpacing: '0%',
-                    color: '#2A2A2A',
-                    mb: '8px'
-                  }}>
+                </Box>
+
+                {/* Comparative Analysis Section */}
+                <Box sx={{ 
+                  opacity: visibleSections >= 25 ? 1 : 0, 
+                  transform: visibleSections >= 25 ? 'translateY(0)' : 'translateY(10px)',
+                  transition: 'all 0.5s ease-out'
+                }}>
+                  <TypedTypography 
+                    start={visibleSections >= 25}
+                    onComplete={handleNext}
+                    sx={{
+                      fontFamily: "'Source Sans 3', sans-serif",
+                      fontWeight: 600,
+                      fontSize: '18px',
+                      lineHeight: '160%',
+                      letterSpacing: '0%',
+                      color: '#2A2A2A',
+                      mb: '8px'
+                    }}
+                  >
                     Comparative Analysis of Government Budgets (In Recent Years)
-                  </Typography>
+                  </TypedTypography>
 
                   {/* Comparative Analysis Table */}
                   <Box sx={{
@@ -413,7 +685,10 @@ const ChatResponse = () => {
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
-                    mb: 3
+                    mb: 3,
+                    opacity: visibleSections >= 26 ? 1 : 0,
+                    transform: visibleSections >= 26 ? 'translateY(0)' : 'translateY(10px)',
+                    transition: 'all 0.5s ease-out'
                   }}>
                     {[1, 2, 3, 4].map((rowIndex) => (
                       <Box
@@ -500,20 +775,38 @@ const ChatResponse = () => {
                         )}
                       </Box>
                     ))}
+                    {/* Trigger next section after a delay once table is shown */}
+                    <Box sx={{ display: 'none' }}>
+                      {visibleSections === 26 && (
+                        <Typewriter text="" onComplete={handleNext} delay={500} start={true} />
+                      )}
+                    </Box>
                   </Box>
 
                   {/* Impact of Budget Decisions */}
-                  <Typography sx={{
-                    fontFamily: "'Source Sans 3', sans-serif",
-                    fontWeight: 600,
-                    fontSize: '18px',
-                    lineHeight: '160%',
-                    letterSpacing: '0%',
-                    color: '#2A2A2A',
-                    mb: '8px'
-                  }}>
+                  </Box>
+
+                {/* Impact Section */}
+                <Box sx={{ 
+                  opacity: visibleSections >= 27 ? 1 : 0, 
+                  transform: visibleSections >= 27 ? 'translateY(0)' : 'translateY(10px)',
+                  transition: 'all 0.5s ease-out'
+                }}>
+                  <TypedTypography 
+                    start={visibleSections >= 27}
+                    onComplete={handleNext}
+                    sx={{
+                      fontFamily: "'Source Sans 3', sans-serif",
+                      fontWeight: 600,
+                      fontSize: '18px',
+                      lineHeight: '160%',
+                      letterSpacing: '0%',
+                      color: '#2A2A2A',
+                      mb: '8px'
+                    }}
+                  >
                     Impact of Budget Decisions
-                  </Typography>
+                  </TypedTypography>
 
                   <Box sx={{
                     p: '4px 0',
@@ -543,45 +836,74 @@ const ChatResponse = () => {
                   </Box>
 
                   {/* Conclusion */}
-                  <Typography sx={{
-                    fontFamily: "'Source Sans 3', sans-serif",
-                    fontWeight: 600,
-                    fontSize: '18px',
-                    lineHeight: '160%',
-                    letterSpacing: '0%',
-                    color: '#2A2A2A',
-                    mb: '8px'
-                  }}>
-                    Conclusion
-                  </Typography>
+                  </Box>
 
-                  <Typography sx={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontWeight: 400,
-                    fontSize: '14px',
-                    lineHeight: '160%',
-                    letterSpacing: '0%',
-                    color: '#2A2A2A',
-                    width: '828px',
-                    mb: 3
-                  }}>
+                {/* Conclusion & Keywords Section */}
+                <Box sx={{ 
+                  opacity: visibleSections >= 28 ? 1 : 0, 
+                  transform: visibleSections >= 28 ? 'translateY(0)' : 'translateY(10px)',
+                  transition: 'all 0.5s ease-out'
+                }}>
+                  <TypedTypography 
+                    start={visibleSections >= 28}
+                    onComplete={handleNext}
+                    sx={{
+                      fontFamily: "'Source Sans 3', sans-serif",
+                      fontWeight: 600,
+                      fontSize: '18px',
+                      lineHeight: '160%',
+                      letterSpacing: '0%',
+                      color: '#2A2A2A',
+                      mb: '8px'
+                    }}
+                  >
+                    Conclusion
+                  </TypedTypography>
+
+                  <TypedTypography 
+                    start={visibleSections >= 29}
+                    onComplete={handleNext}
+                    sx={{
+                      fontFamily: 'Inter, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      lineHeight: '160%',
+                      letterSpacing: '0%',
+                      color: '#2A2A2A',
+                      width: '828px',
+                      mb: 3
+                    }}
+                  >
                     The national budget is instrumental in shaping economic and social policies, reflecting the government's priorities and economic vision. Understanding its components and implications is essential for UPSC preparation, especially in the context of the economy.
-                  </Typography>
+                  </TypedTypography>
 
                   {/* Keywords */}
-                  <Typography sx={{
-                    fontFamily: "'Source Sans 3', sans-serif",
-                    fontWeight: 600,
-                    fontSize: '18px',
-                    lineHeight: '160%',
-                    letterSpacing: '0%',
-                    color: '#2A2A2A',
-                    mb: '8px'
-                  }}>
+                  <TypedTypography 
+                    start={visibleSections >= 30}
+                    onComplete={handleNext}
+                    sx={{
+                      fontFamily: "'Source Sans 3', sans-serif",
+                      fontWeight: 600,
+                      fontSize: '18px',
+                      lineHeight: '160%',
+                      letterSpacing: '0%',
+                      color: '#2A2A2A',
+                      mb: '8px'
+                    }}
+                  >
                     Keywords
-                  </Typography>
+                  </TypedTypography>
 
-                  <Box sx={{ display: 'flex', gap: '6px', width: '828px', flexWrap: 'nowrap', mb: 3 }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    gap: '6px', 
+                    width: '828px', 
+                    flexWrap: 'nowrap', 
+                    mb: 3,
+                    opacity: visibleSections >= 31 ? 1 : 0,
+                    transform: visibleSections >= 31 ? 'translateY(0)' : 'translateY(10px)',
+                    transition: 'all 0.5s ease-out'
+                  }}>
                     {[
                       { width: '126px', label: 'National budget' },
                       { width: '106px', label: 'Fiscal Deficit' },
@@ -603,7 +925,14 @@ const ChatResponse = () => {
                           boxSizing: 'border-box',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center'
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            backgroundColor: '#FFFFFF',
+                            borderColor: '#32B2DD',
+                            boxShadow: '0px 2px 8px rgba(50, 178, 221, 0.12)'
+                          }
                         }}
                       >
                         <Typography sx={{
@@ -621,9 +950,21 @@ const ChatResponse = () => {
                         </Typography>
                       </Box>
                     ))}
+                    {/* Trigger next section after a delay once keywords are shown */}
+                    <Box sx={{ display: 'none' }}>
+                      {visibleSections === 31 && (
+                        <Typewriter text="" onComplete={handleNext} delay={500} start={true} />
+                      )}
+                    </Box>
                   </Box>
+                </Box>
 
-                  {/* Case Studies in Action */}
+                {/* Case Studies Section */}
+                <Box sx={{ 
+                  opacity: visibleSections >= 32 ? 1 : 0, 
+                  transform: visibleSections >= 32 ? 'translateY(0)' : 'translateY(10px)',
+                  transition: 'all 0.5s ease-out'
+                }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', mb: '8px' }}>
                     <Box
                       component="img"
@@ -631,19 +972,30 @@ const ChatResponse = () => {
                       alt="Case Studies"
                       sx={{ width: '18px', height: '18px' }}
                     />
-                    <Typography sx={{
-                      fontFamily: "'Source Sans 3', sans-serif",
-                      fontWeight: 500,
-                      fontSize: '18px',
-                      lineHeight: '160%',
-                      letterSpacing: '0%',
-                      color: '#2A2A2A'
-                    }}>
+                    <TypedTypography 
+                      start={visibleSections >= 32}
+                      onComplete={handleNext}
+                      sx={{
+                        fontFamily: "'Source Sans 3', sans-serif",
+                        fontWeight: 500,
+                        fontSize: '18px',
+                        lineHeight: '160%',
+                        letterSpacing: '0%',
+                        color: '#2A2A2A'
+                      }}
+                    >
                       Case Studies in Action
-                    </Typography>
+                    </TypedTypography>
                   </Box>
                   {/* Case Study Cards */}
-                  <Box sx={{ display: 'flex', gap: '10px', width: '828px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    gap: '10px', 
+                    width: '828px',
+                    opacity: visibleSections >= 33 ? 1 : 0,
+                    transform: visibleSections >= 33 ? 'translateY(0)' : 'translateY(10px)',
+                    transition: 'all 0.5s ease-out'
+                  }}>
                     {[
                       {
                         label: 'India',
@@ -676,7 +1028,14 @@ const ChatResponse = () => {
                           border: '1px solid #E1E7EA',
                           borderRadius: '12px',
                           padding: '12px',
-                          boxSizing: 'border-box'
+                          boxSizing: 'border-box',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.04)',
+                            borderColor: '#32B2DD'
+                          }
                         }}
                       >
                         <Typography sx={{
@@ -717,9 +1076,21 @@ const ChatResponse = () => {
                         )}
                       </Box>
                     ))}
+                    {/* Trigger next section after a delay once cards are shown */}
+                    <Box sx={{ display: 'none' }}>
+                      {visibleSections === 33 && (
+                        <Typewriter text="" onComplete={handleNext} delay={500} start={true} />
+                      )}
+                    </Box>
                   </Box>
+                </Box>
 
-                  {/* Follow up Questions Section */}
+                {/* Follow up Questions Section */}
+                <Box sx={{ 
+                  opacity: visibleSections >= 34 ? 1 : 0, 
+                  transform: visibleSections >= 34 ? 'translateY(0)' : 'translateY(10px)',
+                  transition: 'all 0.5s ease-out'
+                }}>
                   <Box sx={{
                     mt: '16px',
                     display: 'flex',
@@ -735,15 +1106,19 @@ const ChatResponse = () => {
                         alt="Follow up Questions"
                         sx={{ width: '24px', height: '24px' }}
                       />
-                      <Typography sx={{
-                        fontFamily: "'Source Sans 3', sans-serif",
-                        fontWeight: 500,
-                        fontSize: '18px',
-                        lineHeight: '160%',
-                        color: '#2A2A2A'
-                      }}>
+                      <TypedTypography 
+                        start={visibleSections >= 34}
+                        onComplete={handleNext}
+                        sx={{
+                          fontFamily: "'Source Sans 3', sans-serif",
+                          fontWeight: 500,
+                          fontSize: '18px',
+                          lineHeight: '160%',
+                          color: '#2A2A2A'
+                        }}
+                      >
                         Follow up Questions
-                      </Typography>
+                      </TypedTypography>
                     </Box>
 
                     {/* Toggle Switch (Prelims/Mains) */}
@@ -876,7 +1251,13 @@ const ChatResponse = () => {
                         width: 'fit-content'
                       }}>
                         {/* Copy Button */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          cursor: 'pointer',
+                          '&:hover': { '& svg path': { fill: '#32B2DD' }, '& .MuiTypography-root': { color: '#32B2DD' } },
+                          transition: 'all 0.2s'
+                        }}>
                           <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M2.05974 5.41039H4.1179V2.05974C4.1179 1.49276 4.34934 0.977558 4.7224 0.604501C5.09546 0.231444 5.61065 0 6.17764 0H13.6478C14.2148 0 14.7299 0.231444 15.103 0.604501C15.4761 0.977558 15.7075 1.49276 15.7075 2.05974V9.52987C15.7075 10.0969 15.4755 10.6121 15.103 10.9851C14.7299 11.3582 14.2148 11.5896 13.6478 11.5896H11.5896V14.9403C11.5896 15.5072 11.3582 16.0224 10.9851 16.3955C10.6121 16.7686 10.0969 17 9.52987 17H2.05974C1.49276 17 0.977558 16.7686 0.604501 16.3955C0.231443 16.0224 0 15.5072 0 14.9403V7.47013C0 6.90315 0.231443 6.38795 0.604501 6.01489C0.977558 5.64183 1.49276 5.41039 2.05974 5.41039ZM5.2693 5.41039H9.52987C10.0969 5.41039 10.6121 5.64183 10.9851 6.01489C11.3582 6.38795 11.5896 6.90315 11.5896 7.47013V10.4382H13.6478C13.8972 10.4382 14.1244 10.3357 14.2887 10.1708C14.4536 10.006 14.5561 9.77875 14.5561 9.52987V2.05974C14.5561 1.81033 14.4536 1.58312 14.2887 1.41825C14.1239 1.25339 13.8966 1.15088 13.6478 1.15088H6.17764C5.92823 1.15088 5.70101 1.25339 5.53615 1.41825C5.37129 1.58312 5.26877 1.81033 5.26877 2.05974V5.41039H5.2693ZM4.69651 6.56179H4.69334H4.69017H2.05921C1.8098 6.56179 1.58259 6.6643 1.41825 6.82917C1.25339 6.99403 1.15088 7.22125 1.15088 7.47066V14.9408C1.15088 15.1902 1.25339 15.4174 1.41825 15.5823C1.58312 15.7471 1.81033 15.8497 2.05974 15.8497H9.52987C9.77928 15.8497 10.0065 15.7471 10.1714 15.5823C10.3362 15.4174 10.4387 15.1902 10.4387 14.9408V11.0142V7.47066C10.4387 7.22125 10.3362 6.99403 10.1714 6.82917C10.0065 6.6643 9.77928 6.56179 9.52987 6.56179H4.69651Z" fill="#7B869B" />
                           </svg>
@@ -886,18 +1267,26 @@ const ChatResponse = () => {
                             fontSize: '14px',
                             lineHeight: '160%',
                             color: '#7B869B',
-                            ml: '4px'
+                            ml: '4px',
+                            transition: 'color 0.2s'
                           }}>
                             Copy
                           </Typography>
                         </Box>
 
                         {/* Download Button */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', ml: '14px', cursor: 'pointer' }}>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          ml: '14px', 
+                          cursor: 'pointer',
+                          '&:hover': { '& svg path': { stroke: '#32B2DD' }, '& .MuiTypography-root': { color: '#32B2DD' } },
+                          transition: 'all 0.2s'
+                        }}>
                           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M17.5 11.5V14.8333C17.5 15.2754 17.3244 15.6993 17.0118 16.0118C16.6993 16.3244 16.2754 16.5 15.8333 16.5H4.16667C3.72464 16.5 3.30072 16.3244 2.98816 16.0118C2.67559 15.6993 2.5 15.2754 2.5 14.8333V11.5" stroke="#7B869B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                            <path d="M5.83301 8.33398L9.99967 12.5007L14.1663 8.33398" stroke="#7B869B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                            <path d="M10 12.5V2.5" stroke="#7B869B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M17.5 11.5V14.8333C17.5 15.2754 17.3244 15.6993 17.0118 16.0118C16.6993 16.3244 16.2754 16.5 15.8333 16.5H4.16667C3.72464 16.5 3.30072 16.3244 2.98816 16.0118C2.67559 15.6993 2.5 15.2754 2.5 14.8333V11.5" stroke="#7B869B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M5.83301 8.33398L9.99967 12.5007L14.1663 8.33398" stroke="#7B869B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M10 12.5V2.5" stroke="#7B869B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                           <Typography sx={{
                             fontFamily: "'Source Sans 3', sans-serif",
@@ -905,18 +1294,26 @@ const ChatResponse = () => {
                             fontSize: '14px',
                             lineHeight: '160%',
                             color: '#7B869B',
-                            ml: '4px'
+                            ml: '4px',
+                            transition: 'color 0.2s'
                           }}>
                             Download
                           </Typography>
                         </Box>
 
                         {/* Share Button */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', ml: '491px', cursor: 'pointer' }}>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          ml: '491px', 
+                          cursor: 'pointer',
+                          '&:hover': { '& svg path': { stroke: '#32B2DD' }, '& .MuiTypography-root': { color: '#32B2DD' } },
+                          transition: 'all 0.2s'
+                        }}>
                           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M17.5 11.5V14.8333C17.5 15.2754 17.3244 15.6993 17.0118 16.0118C16.6993 16.3244 16.2754 16.5 15.8333 16.5H4.16667C3.72464 16.5 3.30072 16.3244 2.98816 16.0118C2.67559 15.6993 2.5 15.2754 2.5 14.8333V11.5" stroke="#7B869B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                            <path d="M5.83301 8.33398L9.99967 12.5007L14.1663 8.33398" stroke="#7B869B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                            <path d="M10 12.5V2.5" stroke="#7B869B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M17.5 11.5V14.8333C17.5 15.2754 17.3244 15.6993 17.0118 16.0118C16.6993 16.3244 16.2754 16.5 15.8333 16.5H4.16667C3.72464 16.5 3.30072 16.3244 2.98816 16.0118C2.67559 15.6993 2.5 15.2754 2.5 14.8333V11.5" stroke="#7B869B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M5.83301 8.33398L9.99967 12.5007L14.1663 8.33398" stroke="#7B869B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M10 12.5V2.5" stroke="#7B869B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                           <Typography sx={{
                             fontFamily: "'Source Sans 3', sans-serif",
@@ -924,33 +1321,64 @@ const ChatResponse = () => {
                             fontSize: '14px',
                             lineHeight: '160%',
                             color: '#7B869B',
-                            ml: '4px'
+                            ml: '4px',
+                            transition: 'color 0.2s'
                           }}>
                             Share
                           </Typography>
                         </Box>
 
                         {/* Like Icon */}
-                        <Box sx={{ ml: '28px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M0.541992 5.98145H2.26367C2.26921 5.98145 2.27811 5.9831 2.28711 5.99219C2.2968 6.0022 2.30566 6.02001 2.30566 6.04102V14.4404C2.30566 14.4614 2.29679 14.4783 2.28711 14.4883C2.278 14.4976 2.26927 14.5 2.26367 14.5H0.541992C0.536369 14.5 0.526728 14.4977 0.517578 14.4883C0.507987 14.4782 0.500007 14.4613 0.5 14.4404V6.04102C0.5 6.02001 0.50789 6.0022 0.517578 5.99219C0.526699 5.9828 0.536383 5.98145 0.541992 5.98145ZM8.1084 0.5C8.38352 0.492475 8.68162 0.64456 8.92188 0.945312C9.16164 1.24555 9.29448 1.63711 9.27148 1.9873L9.27051 1.99219L9.08398 5.4541L9.05566 5.98145H13.4199L13.541 5.98828C13.6619 6.00288 13.7801 6.0393 13.8906 6.0957C14.038 6.1709 14.1683 6.28067 14.2705 6.41797C14.3728 6.55534 14.4438 6.71636 14.4775 6.88867C14.5112 7.06098 14.507 7.23933 14.4639 7.40918L14.4629 7.41016L12.9834 13.3008C12.8969 13.6459 12.7036 13.9494 12.4365 14.165C12.1698 14.3804 11.8437 14.4968 11.5098 14.5H4.4082V5.98145H5.78125L5.90527 5.66406L7.72266 1.04883L7.72461 1.04492C7.78991 0.87503 7.87341 0.714932 7.96387 0.606445C8.00773 0.553863 8.04387 0.525547 8.06738 0.511719C8.08533 0.501192 8.09287 0.499975 8.09473 0.5V0.500977L8.1084 0.5Z" stroke="#7B869B" />
+                        <Box 
+                          onClick={handleLike}
+                          sx={{ 
+                            ml: '28px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            cursor: 'pointer',
+                            '&:hover': { '& svg': { filter: 'drop-shadow(0px 0px 4px rgba(50, 178, 221, 0.4))' } },
+                            transition: 'transform 0.2s',
+                            '&:active': { transform: 'scale(0.9)' }
+                          }}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 15 15" fill={liked ? "#32B2DD" : "none"} xmlns="http://www.w3.org/2000/svg">
+                            <path d="M0.541992 5.98145H2.26367C2.26921 5.98145 2.27811 5.9831 2.28711 5.99219C2.2968 6.0022 2.30566 6.02001 2.30566 6.04102V14.4404C2.30566 14.4614 2.29679 14.4783 2.28711 14.4883C2.278 14.4976 2.26927 14.5 2.26367 14.5H0.541992C0.536369 14.5 0.526728 14.4977 0.517578 14.4883C0.507987 14.4782 0.500007 14.4613 0.5 14.4404V6.04102C0.5 6.02001 0.50789 6.0022 0.517578 5.99219C0.526699 5.9828 0.536383 5.98145 0.541992 5.98145ZM8.1084 0.5C8.38352 0.492475 8.68162 0.64456 8.92188 0.945312C9.16164 1.24555 9.29448 1.63711 9.27148 1.9873L9.27051 1.99219L9.08398 5.4541L9.05566 5.98145H13.4199L13.541 5.98828C13.6619 6.00288 13.7801 6.0393 13.8906 6.0957C14.038 6.1709 14.1683 6.28067 14.2705 6.41797C14.3728 6.55534 14.4438 6.71636 14.4775 6.88867C14.5112 7.06098 14.507 7.23933 14.4639 7.40918L14.4629 7.41016L12.9834 13.3008C12.8969 13.6459 12.7036 13.9494 12.4365 14.165C12.1698 14.3804 11.8437 14.4968 11.5098 14.5H4.4082V5.98145H5.78125L5.90527 5.66406L7.72266 1.04883L7.72461 1.04492C7.78991 0.87503 7.87341 0.714932 7.96387 0.606445C8.00773 0.553863 8.04387 0.525547 8.06738 0.511719C8.08533 0.501192 8.09287 0.499975 8.09473 0.5V0.500977L8.1084 0.5Z" stroke={liked ? "#32B2DD" : "#7B869B"} />
                           </svg>
                         </Box>
 
                         {/* Dislike Icon */}
-                        <Box sx={{ ml: '16px', display: 'flex', alignItems: 'center', cursor: 'pointer', transform: 'rotate(180deg)' }}>
-                          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M0.541992 5.98145H2.26367C2.26921 5.98145 2.27811 5.9831 2.28711 5.99219C2.2968 6.0022 2.30566 6.02001 2.30566 6.04102V14.4404C2.30566 14.4614 2.29679 14.4783 2.28711 14.4883C2.278 14.4976 2.26927 14.5 2.26367 14.5H0.541992C0.536369 14.5 0.526728 14.4977 0.517578 14.4883C0.507987 14.4782 0.500007 14.4613 0.5 14.4404V6.04102C0.5 6.02001 0.50789 6.0022 0.517578 5.99219C0.526699 5.9828 0.536383 5.98145 0.541992 5.98145ZM8.1084 0.5C8.38352 0.492475 8.68162 0.64456 8.92188 0.945312C9.16164 1.24555 9.29448 1.63711 9.27148 1.9873L9.27051 1.99219L9.08398 5.4541L9.05566 5.98145H13.4199L13.541 5.98828C13.6619 6.00288 13.7801 6.0393 13.8906 6.0957C14.038 6.1709 14.1683 6.28067 14.2705 6.41797C14.3728 6.55534 14.4438 6.71636 14.4775 6.88867C14.5112 7.06098 14.507 7.23933 14.4639 7.40918L14.4629 7.41016L12.9834 13.3008C12.8969 13.6459 12.7036 13.9494 12.4365 14.165C12.1698 14.3804 11.8437 14.4968 11.5098 14.5H4.4082V5.98145H5.78125L5.90527 5.66406L7.72266 1.04883L7.72461 1.04492C7.78991 0.87503 7.87341 0.714932 7.96387 0.606445C8.00773 0.553863 8.04387 0.525547 8.06738 0.511719C8.08533 0.501192 8.09287 0.499975 8.09473 0.5V0.500977L8.1084 0.5Z" stroke="#7B869B" />
+                        <Box 
+                          onClick={handleDislike}
+                          sx={{ 
+                            ml: '16px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            cursor: 'pointer', 
+                            transform: 'rotate(180deg)',
+                            '&:hover': { '& svg': { filter: 'drop-shadow(0px 0px 4px rgba(249, 151, 16, 0.4))' } },
+                            transition: 'transform 0.2s',
+                            '&:active': { transform: 'rotate(180deg) scale(0.9)' }
+                          }}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 15 15" fill={disliked ? "#F99710" : "none"} xmlns="http://www.w3.org/2000/svg">
+                            <path d="M0.541992 5.98145H2.26367C2.26921 5.98145 2.27811 5.9831 2.28711 5.99219C2.2968 6.0022 2.30566 6.02001 2.30566 6.04102V14.4404C2.30566 14.4614 2.29679 14.4783 2.28711 14.4883C2.278 14.4976 2.26927 14.5 2.26367 14.5H0.541992C0.536369 14.5 0.526728 14.4977 0.517578 14.4883C0.507987 14.4782 0.500007 14.4613 0.5 14.4404V6.04102C0.5 6.02001 0.50789 6.0022 0.517578 5.99219C0.526699 5.9828 0.536383 5.98145 0.541992 5.98145ZM8.1084 0.5C8.38352 0.492475 8.68162 0.64456 8.92188 0.945312C9.16164 1.24555 9.29448 1.63711 9.27148 1.9873L9.27051 1.99219L9.08398 5.4541L9.05566 5.98145H13.4199L13.541 5.98828C13.6619 6.00288 13.7801 6.0393 13.8906 6.0957C14.038 6.1709 14.1683 6.28067 14.2705 6.41797C14.3728 6.55534 14.4438 6.71636 14.4775 6.88867C14.5112 7.06098 14.507 7.23933 14.4639 7.40918L14.4629 7.41016L12.9834 13.3008C12.8969 13.6459 12.7036 13.9494 12.4365 14.165C12.1698 14.3804 11.8437 14.4968 11.5098 14.5H4.4082V5.98145H5.78125L5.90527 5.66406L7.72266 1.04883L7.72461 1.04492C7.78991 0.87503 7.87341 0.714932 7.96387 0.606445C8.00773 0.553863 8.04387 0.525547 8.06738 0.511719C8.08533 0.501192 8.09287 0.499975 8.09473 0.5V0.500977L8.1084 0.5Z" stroke={disliked ? "#F99710" : "#7B869B"} />
                           </svg>
                         </Box>
 
                         {/* More Icon */}
-                        <Box sx={{ ml: '28px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                        <Box sx={{ 
+                          ml: '28px', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          cursor: 'pointer',
+                          '&:hover': { '& svg circle': { fill: '#32B2DD' } },
+                          transition: 'all 0.2s'
+                        }}>
                           <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <g clip-path="url(#clip0_239_26721)">
-                              <circle cx="5" cy="11" r="2" fill="#7B869B" />
-                              <circle cx="11" cy="11" r="2" fill="#7B869B" />
-                              <circle cx="17" cy="11" r="2" fill="#7B869B" />
+                            <g clipPath="url(#clip0_239_26721)">
+                              <circle cx="5" cy="11" r="2" fill="#7B869B" style={{ transition: 'fill 0.2s' }} />
+                              <circle cx="11" cy="11" r="2" fill="#7B869B" style={{ transition: 'fill 0.2s' }} />
+                              <circle cx="17" cy="11" r="2" fill="#7B869B" style={{ transition: 'fill 0.2s' }} />
                             </g>
                             <defs>
                               <clipPath id="clip0_239_26721">
@@ -963,8 +1391,9 @@ const ChatResponse = () => {
                     </Box>
                   )}
                 </Box>
-              </Box>
-            </Box>
+              </>
+            )}
+          </Box>
 
             {/* Right Side Bar - Starts with Bot Response */}
             <Box sx={{
@@ -972,14 +1401,14 @@ const ChatResponse = () => {
               flexShrink: 0,
               height: 'fit-content',
               position: 'sticky',
-              top: '100px', // Adjusted to ensure it stays below the sticky/fixed navbar
+              top: '80px', // Adjusted to be just below the navbar
               alignSelf: 'flex-start',
               zIndex: 10
             }}>
               <Stack spacing={1.25}>
                 {/* Stay Updated */}
                 <Box>
-                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.75 }}>
+                  <Stack sx={{ flexDirection: 'row', gap: 1, alignItems: 'center', mb: 0.75 }}>
                     <LanguageIcon sx={{ fontSize: 20, color: '#7B869B' }} />
                     <Typography sx={{ fontWeight: 600, fontSize: '18px', fontFamily: "'DM Sans', sans-serif" }}>Stay Updated</Typography>
                   </Stack>
@@ -997,7 +1426,14 @@ const ChatResponse = () => {
                     boxSizing: 'border-box',
                     mb: 0.75,
                     alignItems: 'center',
-                    position: 'relative'
+                    position: 'relative',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      borderColor: '#32B2DD',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0px 4px 12px rgba(50, 178, 221, 0.08)'
+                    }
                   }}>
                     <Box sx={{ flexGrow: 1 }}>
                       <Typography sx={{
@@ -1045,7 +1481,14 @@ const ChatResponse = () => {
                     flexDirection: 'column',
                     justifyContent: 'center',
                     gap: '10px',
-                    position: 'relative'
+                    position: 'relative',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      borderColor: '#32B2DD',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0px 4px 12px rgba(50, 178, 221, 0.08)'
+                    }
                   }}>
                     <Typography sx={{
                       fontFamily: "'Source Sans 3', sans-serif",
@@ -1076,7 +1519,7 @@ const ChatResponse = () => {
 
                 {/* Connect the Dots */}
                 <Box>
-                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.75 }}>
+                  <Stack sx={{ flexDirection: 'row', gap: 1, alignItems: 'center', mb: 0.75 }}>
                     <ConnectDotsIcon />
                     <Typography sx={{ fontWeight: 600, fontSize: '18px', fontFamily: "'DM Sans', sans-serif" }}>Connect the Dots</Typography>
                   </Stack>
@@ -1094,7 +1537,14 @@ const ChatResponse = () => {
                     justifyContent: 'center',
                     mb: 0.75,
                     gap: '4px',
-                    backgroundColor: '#FBFBFB'
+                    backgroundColor: '#FBFBFB',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      backgroundColor: '#FFFFFF',
+                      borderColor: '#32B2DD',
+                      transform: 'translateX(4px)'
+                    }
                   }}>
                     <Typography sx={{
                       fontFamily: "'Source Sans 3', sans-serif",
@@ -1129,7 +1579,14 @@ const ChatResponse = () => {
                     flexDirection: 'column',
                     justifyContent: 'center',
                     backgroundColor: '#FBFBFB',
-                    gap: '4px'
+                    gap: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      backgroundColor: '#FFFFFF',
+                      borderColor: '#32B2DD',
+                      transform: 'translateX(4px)'
+                    }
                   }}>
                     <Typography sx={{
                       fontFamily: "'Source Sans 3', sans-serif",
@@ -1166,7 +1623,14 @@ const ChatResponse = () => {
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
-                  mt: '-4px' // Adjusting Stack spacing (1.25 * 8 = 10px) to reach ~6px gap
+                  mt: '-4px', // Adjusting Stack spacing (1.25 * 8 = 10px) to reach ~6px gap
+                  cursor: 'pointer',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    borderColor: '#32B2DD',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0px 4px 12px rgba(132, 100, 64, 0.08)'
+                  }
                 }}>
                   <Typography sx={{
                     fontSize: '20px',
@@ -1196,7 +1660,12 @@ const ChatResponse = () => {
                           px: '12px',
                           py: '6px',
                           cursor: 'pointer',
-                          '&:hover': { backgroundColor: '#F8F8F8' }
+                          transition: 'all 0.2s ease',
+                          '&:hover': { 
+                            backgroundColor: '#FFFFFF',
+                            borderColor: '#32B2DD',
+                            boxShadow: '0px 2px 6px rgba(50, 178, 221, 0.1)'
+                          }
                         }}
                       >
                         <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#2A2A2A' }}>
@@ -1261,17 +1730,22 @@ const ChatResponse = () => {
               fullWidth
               placeholder="Ask a follow up.."
               variant="standard"
-              InputProps={{
-                disableUnderline: true,
-                sx: {
-                  fontSize: '15px',
-                  '&:before': { display: 'none' },
-                  '&:after': { display: 'none' },
-                  '&:hover:not(.Mui-disabled):before': { display: 'none' }
-                }
-              }}
+              value={followUpValue}
+              onChange={(e) => setFollowUpValue(e.target.value)}
+              onKeyDown={handleFollowUpKeyDown}
               multiline
               maxRows={4}
+              slotProps={{
+                input: {
+                  disableUnderline: true,
+                  sx: {
+                    fontSize: '15px',
+                    '&:before': { display: 'none' },
+                    '&:after': { display: 'none' },
+                    '&:hover:not(.Mui-disabled):before': { display: 'none' }
+                  }
+                }
+              }}
               sx={{
                 '& .MuiInput-underline:before': { borderBottom: 'none' },
                 '& .MuiInput-underline:after': { borderBottom: 'none' },
@@ -1280,17 +1754,26 @@ const ChatResponse = () => {
             />
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Stack direction="row" spacing={1}>
-                <Button size="small" startIcon={<MenuBookIcon sx={{ fontSize: 18 }} />} sx={{ textTransform: 'none', color: '#7A7A7A', fontSize: '13px' }}>Learn</Button>
-                <Button size="small" startIcon={<BorderColorIcon sx={{ fontSize: 18 }} />} sx={{ textTransform: 'none', color: '#7A7A7A', fontSize: '13px' }}>Practice</Button>
-                <Button size="small" startIcon={<AddIcon sx={{ fontSize: 18 }} />} sx={{ textTransform: 'none', color: '#7A7A7A', fontSize: '13px' }}>Attach</Button>
+                <Button size="small" startIcon={<MenuBookIcon sx={{ fontSize: 18 }} />} sx={{ textTransform: 'none', color: '#7A7A7A', fontSize: '13px', '&:hover': { color: '#32B2DD', backgroundColor: 'rgba(50, 178, 221, 0.04)' } }}>Learn</Button>
+                <Button size="small" startIcon={<BorderColorIcon sx={{ fontSize: 18 }} />} sx={{ textTransform: 'none', color: '#7A7A7A', fontSize: '13px', '&:hover': { color: '#32B2DD', backgroundColor: 'rgba(50, 178, 221, 0.04)' } }}>Practice</Button>
+                <Button size="small" startIcon={<AddIcon sx={{ fontSize: 18 }} />} sx={{ textTransform: 'none', color: '#7A7A7A', fontSize: '13px', '&:hover': { color: '#32B2DD', backgroundColor: 'rgba(50, 178, 221, 0.04)' } }}>Attach</Button>
               </Stack>
-              <IconButton sx={{ 
-                bgcolor: '#32B2DD', 
-                color: 'white', 
-                width: 36, 
-                height: 36,
-                '&:hover': { bgcolor: '#2A99BD' } 
-              }}>
+              <IconButton 
+                onClick={handleFollowUpSubmit}
+                disabled={!followUpValue.trim()}
+                sx={{ 
+                  bgcolor: followUpValue.trim() ? '#32B2DD' : 'rgba(50, 178, 221, 0.4)', 
+                  color: 'white', 
+                  width: 36, 
+                  height: 36,
+                  transition: 'all 0.2s ease',
+                  '&:hover': { bgcolor: followUpValue.trim() ? '#2A99BD' : 'rgba(50, 178, 221, 0.4)' },
+                  '&.Mui-disabled': {
+                    bgcolor: 'rgba(50, 178, 221, 0.2)',
+                    color: 'rgba(255, 255, 255, 0.7)'
+                  }
+                }}
+              >
                 <SendIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>

@@ -1,6 +1,6 @@
 
 import fs from 'fs';
-const content = fs.readFileSync('c:/desginday/mntor-web/mntro-Web-ui/src/pages/Chat_response.jsx', 'utf8');
+const content = fs.readFileSync('./src/pages/Chat_response.jsx', 'utf8');
 const lines = content.split('\n');
 let stack = [];
 lines.forEach((line, i) => {

@@ -1,11 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Paper, IconButton, Stack, Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const AskAnything = () => {
-  const [placeholder, setPlaceholder] = React.useState('');
-  const [placeholderIndex, setPlaceholderIndex] = React.useState(0);
-  const [isDeleting, setIsDeleting] = React.useState(false);
-  const [typingSpeed, setTypingSpeed] = React.useState(150);
+  const navigate = useNavigate();
+  const [inputValue, setInputValue] = useState('');
+  const [placeholder, setPlaceholder] = useState('');
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [typingSpeed, setTypingSpeed] = useState(150);
+
+  const handleSubmit = () => {
+    if (inputValue.trim()) {
+      navigate('/chat', { state: { question: inputValue } });
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSubmit();
+    }
+  };
 
   const placeholders = React.useMemo(() => [
     "Ask me anything related to UPSC!",
@@ -90,6 +105,9 @@ const AskAnything = () => {
       >
         <Box
           component="input"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           sx={{
             flex: 1,
@@ -104,17 +122,22 @@ const AskAnything = () => {
           }}
         />
         <IconButton 
+          onClick={handleSubmit}
+          disabled={!inputValue.trim()}
           sx={{ 
             p: 0,
-            '&:hover': { opacity: 0.8 }
+            '&:hover': { opacity: 0.8 },
+            '&.Mui-disabled': {
+              opacity: 1, // Keep the button visible but use the internal SVG opacity for state
+            }
           }}
         >
-          <Box component="svg" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <g opacity="0.4">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g opacity={inputValue.trim() ? "1" : "0.4"} style={{ transition: 'opacity 0.2s ease' }}>
               <rect width="32" height="32" rx="8" fill="#37A7D5"/>
               <path d="M16.5309 9.47L20.8209 13.76C21.1109 14.05 21.1109 14.53 20.8209 14.82C20.5309 15.11 20.0509 15.11 19.7609 14.82L16.7509 11.81V22C16.7509 22.41 16.4109 22.75 16.0009 22.75C15.5909 22.75 15.2509 22.41 15.2509 22V11.81L12.2409 14.82C11.9509 15.11 11.4709 15.11 11.1809 14.82C11.0309 14.67 10.9609 14.48 10.9609 14.29C10.9609 14.1 11.0409 13.9 11.1809 13.76L15.4709 9.47C15.6109 9.33 15.8009 9.25 16.0009 9.25C16.2009 9.25 16.3909 9.33 16.5309 9.47Z" fill="white"/>
             </g>
-          </Box>
+          </svg>
         </IconButton>
       </Paper>
 

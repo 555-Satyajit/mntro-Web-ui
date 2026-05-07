@@ -34,10 +34,10 @@ const StartLearningCard = () => {
 
       {/* Intro Section with AI Icon */}
       <Stack direction="row" spacing={3} sx={{ mt: '12px', mb: '30px', alignItems: 'flex-start' }}>
-        <Box component="svg" width="29" height="28" viewBox="0 0 29 28" fill="none" xmlns="http://www.w3.org/2000/svg" sx={{ flexShrink: 0 }}>
+        <svg width="29" height="28" viewBox="0 0 29 28" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
           <path fillRule="evenodd" clipRule="evenodd" d="M7.34305 13.6762L9.79074 6.33318H11.2928L13.7405 13.6762L21.0835 16.1239V17.626L13.7405 20.0737L11.2928 27.4167H9.79074L7.34305 20.0737L0 17.626V16.1239L7.34305 13.6762Z" fill="#37A7D5"/>
           <path fillRule="evenodd" clipRule="evenodd" d="M21.1969 3.78064L22.4571 0H23.9591L25.2194 3.78064L29 5.04085V6.5429L25.2194 7.80311L23.9591 11.5838H22.4571L21.1969 7.80311L17.4162 6.5429V5.04085L21.1969 3.78064Z" fill="#37A7D5"/>
-        </Box>
+        </svg>
         <Typography sx={{ 
           color: '#2A2A2A', 
           fontSize: '14px', 

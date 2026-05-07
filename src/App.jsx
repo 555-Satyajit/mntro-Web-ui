@@ -6,19 +6,25 @@ import ChatResponse from './pages/Chat_response';
 import LoadingScreen from './components/common/LoadingScreen';
 
 function App() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    // Check if it's the first load of the session
+    return !sessionStorage.getItem('hasLoaded');
+  });
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 3000);
+    if (loading) {
+      const timer = setTimeout(() => {
+        setLoading(false);
+        sessionStorage.setItem('hasLoaded', 'true');
+      }, 3000);
 
-    return () => clearTimeout(timer);
-  }, []);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
   return (
     <Router>
-      <Box className="App" sx={{ minHeight: '100vh', width: '100%', overflowY: 'auto' }}>
+      <Box className="App" sx={{ minHeight: '100vh', width: '100%' }}>
         {loading ? (
           <LoadingScreen />
         ) : (

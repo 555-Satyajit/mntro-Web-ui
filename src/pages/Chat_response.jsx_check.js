@@ -1,7 +1,7 @@
 
 import fs from 'fs';
 
-const content = fs.readFileSync('c:/desginday/mntor-web/mntro-Web-ui/src/pages/Chat_response.jsx', 'utf8');
+const content = fs.readFileSync('./src/pages/Chat_response.jsx', 'utf8');
 
 const openBox = (content.match(/<Box/g) || []).length;
 const closeBox = (content.match(/<\/Box>/g) || []).length;
