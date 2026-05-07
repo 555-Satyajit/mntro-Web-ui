@@ -594,18 +594,65 @@ const ChatResponse = () => {
                   </Paper>
               </Stack>
             </Box>
+          {/* Follow-up Questions Section */}
+          <Box sx={{ mt: '48px', mb: '24px' }}>
+            <Typography sx={{ 
+              fontFamily: "'Source Sans 3', sans-serif", 
+              fontWeight: 600, 
+              fontSize: '18px', 
+              color: '#2A2A2A',
+              mb: 2
+            }}>
+              Follow-up Questions
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+              {[
+                'How is the National Budget prepared?',
+                'What are the main objectives of fiscal policy?',
+                'Explain the difference between revenue and capital expenditure.',
+                'What is fiscal deficit and how does it affect the economy?'
+              ].map((question) => (
+                <Button 
+                  key={question}
+                  variant="outlined"
+                  sx={{ 
+                    textTransform: 'none', 
+                    borderRadius: '20px', 
+                    borderColor: '#E1E7EA', 
+                    color: '#49546C',
+                    fontSize: '14px',
+                    fontFamily: "'DM Sans', sans-serif",
+                    px: 3,
+                    py: 1,
+                    '&:hover': { 
+                      borderColor: '#32B2DD',
+                      backgroundColor: 'rgba(50, 178, 221, 0.04)',
+                      color: '#32B2DD'
+                    }
+                  }}
+                >
+                  {question}
+                </Button>
+              ))}
+            </Box>
           </Box>
         </Box>
 
-        {/* Bottom Sticky Input */}
+        {/* Bottom Sticky Input Area with Opaque Background */}
         <Box sx={{ 
           position: 'fixed', 
-          bottom: 20, 
-          left: { xs: 20, md: 184 },
-          right: { xs: 20, md: 428 },
+          bottom: 0, 
+          left: { xs: 0, md: isSidebarCollapsed ? '72px' : '200px' },
+          right: { xs: 0, md: '316px' }, // 292px sidebar + 24px gap
           zIndex: 1000,
+          background: 'linear-gradient(to top, #FEFEFE 85%, rgba(254, 254, 254, 0) 100%)',
+          pt: 4,
+          pb: 3,
+          px: { xs: 2, md: '112px' },
           display: 'flex',
           flexDirection: 'column',
+          alignItems: 'center',
+          transition: 'left 0.3s ease-in-out'
         }}>
           <Paper sx={{ 
             width: '100%', 
@@ -615,7 +662,8 @@ const ChatResponse = () => {
             boxShadow: '0px 4px 20px rgba(0,0,0,0.05)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 1
+            gap: 1,
+            backgroundColor: '#FFFFFF'
           }}>
             <TextField 
               fullWidth
@@ -623,23 +671,35 @@ const ChatResponse = () => {
               variant="standard"
               InputProps={{
                 disableUnderline: true,
-                sx: { fontSize: '15px' }
+                sx: { fontSize: '15px', fontFamily: "'DM Sans', sans-serif" }
               }}
               multiline
               maxRows={4}
             />
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Stack direction="row" spacing={1}>
-                <Button size="small" startIcon={<MenuBookIcon />} sx={{ textTransform: 'none', color: '#7A7A7A' }}>Learn</Button>
-                <Button size="small" startIcon={<BorderColorIcon />} sx={{ textTransform: 'none', color: '#7A7A7A' }}>Practice</Button>
-                <Button size="small" startIcon={<AddIcon />} sx={{ textTransform: 'none', color: '#7A7A7A' }}>Attach</Button>
+                <Button size="small" startIcon={<MenuBookIcon sx={{ fontSize: 18 }} />} sx={{ textTransform: 'none', color: '#7A7A7A', fontSize: '13px' }}>Learn</Button>
+                <Button size="small" startIcon={<BorderColorIcon sx={{ fontSize: 18 }} />} sx={{ textTransform: 'none', color: '#7A7A7A', fontSize: '13px' }}>Practice</Button>
+                <Button size="small" startIcon={<AddIcon sx={{ fontSize: 18 }} />} sx={{ textTransform: 'none', color: '#7A7A7A', fontSize: '13px' }}>Attach</Button>
               </Stack>
-              <IconButton sx={{ bgcolor: '#32B2DD', color: 'white', '&:hover': { bgcolor: '#2A99BD' } }}>
-                <SendIcon sx={{ fontSize: 20 }} />
+              <IconButton sx={{ 
+                bgcolor: '#32B2DD', 
+                color: 'white', 
+                width: 36, 
+                height: 36,
+                '&:hover': { bgcolor: '#2A99BD' } 
+              }}>
+                <SendIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Box>
           </Paper>
-          <Typography sx={{ fontSize: '11px', color: '#7A7A7A', mt: 1 }}>
+          <Typography sx={{ 
+            fontSize: '11px', 
+            color: '#7A7A7A', 
+            mt: 1.5,
+            fontFamily: "'DM Sans', sans-serif",
+            textAlign: 'center'
+          }}>
             Mntor can make mistakes. Check important info before proceeding.
           </Typography>
         </Box>
