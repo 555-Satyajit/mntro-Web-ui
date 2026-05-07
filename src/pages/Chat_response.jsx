@@ -1310,7 +1310,8 @@ const ChatResponse = () => {
           </Typography>
         </Box>
       </Box>
-    );
+    </Box>
+  );
 };
 
 export default ChatResponse;
