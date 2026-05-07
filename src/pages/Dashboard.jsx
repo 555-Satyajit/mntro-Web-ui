@@ -8,6 +8,8 @@ import StatCards from '../components/dashboard/StatCards';
 import StartLearningCard from '../components/dashboard/StartLearningCard';
 import AskAnything from '../components/dashboard/AskAnything';
 import CurrentAffairs from '../components/dashboard/CurrentAffairs';
+import MyTestsSection from '../components/dashboard/MyTestsSection';
+import MentorBanner from '../components/dashboard/MentorBanner';
 
 const Dashboard = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -73,6 +75,12 @@ const Dashboard = () => {
 
             {/* Current Affairs Section */}
             <CurrentAffairs />
+
+            {/* My Tests Section */}
+            <MyTestsSection />
+
+            {/* Mentor Guidance Banner */}
+            <MentorBanner />
           </Container>
         </Box>
       </Box>
