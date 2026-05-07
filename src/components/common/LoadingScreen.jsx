@@ -1,11 +1,15 @@
 import React from 'react';
-import Lottie from 'lottie-react';
+import { useLottie } from 'lottie-react';
 import { Box, Typography } from '@mui/material';
 import homeAnimation from '../../assets/Home element.json';
 
 const LoadingScreen = () => {
-  // Handle some environments where the import returns { default: Lottie }
-  const LottieComponent = Lottie?.default || Lottie;
+  const options = {
+    animationData: homeAnimation,
+    loop: true,
+  };
+
+  const { View: LottieView } = useLottie(options);
 
   return (
     <Box
@@ -25,10 +29,7 @@ const LoadingScreen = () => {
       }}
     >
       <Box sx={{ width: '200px', height: '200px' }}>
-        <LottieComponent 
-          animationData={homeAnimation}
-          loop={true} 
-        />
+        {LottieView}
       </Box>
       <Typography
         sx={{

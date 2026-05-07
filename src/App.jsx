@@ -6,10 +6,7 @@ import ChatResponse from './pages/Chat_response';
 import LoadingScreen from './components/common/LoadingScreen';
 
 function App() {
-  const [loading, setLoading] = useState(() => {
-    // Check if it's the first load of the session
-    return !sessionStorage.getItem('hasLoaded');
-  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (loading) {
