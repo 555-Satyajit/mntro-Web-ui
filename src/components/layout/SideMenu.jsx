@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Divider, Avatar } from '@mui/material';
+import { Box, Divider, Avatar, Typography, ButtonBase } from '@mui/material';
 
 
 const HomeIcon = () => (
@@ -81,58 +81,108 @@ const LogoutIcon = () => (
   </svg>
 );
 
-const SidebarIcon = ({ icon: Icon, active = false, hasBackground = false, color = '#7B869B' }) => (
-  <Box
+const SidebarIcon = ({ icon: Icon, label, active = false, hasBackground = false, color = '#7B869B', isCollapsed }) => (
+  <ButtonBase
     sx={{
-      width: 36,
-      height: 36,
+      width: isCollapsed ? 36 : '100%',
+      height: 42,
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: '6px',
+      justifyContent: isCollapsed ? 'center' : 'flex-start',
+      borderRadius: '8px',
       backgroundColor: hasBackground ? '#EAEFF3' : 'transparent',
       cursor: 'pointer',
       color: active ? '#37A7D5' : color,
-      transition: 'all 0.15s ease-in-out',
+      transition: 'all 0.2s ease-in-out',
+      px: isCollapsed ? 0 : '16px',
+      gap: '12px',
+      overflow: 'hidden',
       '&:hover': {
         backgroundColor: active ? '#D9E4EC' : '#F1F1F1'
       }
     }}
   >
-    {typeof Icon === 'function' ? <Icon /> : <Icon size={20} strokeWidth={1.8} />}
-  </Box>
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 24 }}>
+      {typeof Icon === 'function' ? <Icon /> : <Icon size={20} strokeWidth={1.8} />}
+    </Box>
+    {!isCollapsed && (
+      <Typography
+        sx={{
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: '14px',
+          fontWeight: active ? 600 : 500,
+          color: active ? '#37A7D5' : '#696E75',
+          whiteSpace: 'nowrap'
+        }}
+      >
+        {label}
+      </Typography>
+    )}
+  </ButtonBase>
 );
 
-const ToggleIcon = () => (
-  <svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+const ToggleIcon = ({ isCollapsed }) => (
+  <svg 
+    width="19" 
+    height="19" 
+    viewBox="0 0 19 19" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease' }}
+  >
     <path opacity="0.4" d="M13.48 0H5.52C2.07 0 0 2.06 0 5.52V13.47C0 16.94 2.07 19 5.52 19H13.47C16.93 19 18.99 16.94 18.99 13.48V5.52C19 2.06 16.93 0 13.48 0Z" fill="#888E9D"/>
     <path d="M7.4648 12.339C7.33871 12.339 7.21263 12.2925 7.11308 12.193C6.92064 12.0005 6.92064 11.682 7.11308 11.4896L9.10391 9.49874L7.11308 7.50792C6.92064 7.31547 6.92064 6.99694 7.11308 6.80449C7.30553 6.61204 7.62406 6.61204 7.81651 6.80449L10.159 9.14703C10.3515 9.33947 10.3515 9.65801 10.159 9.85045L7.81651 12.193C7.71697 12.2925 7.59088 12.339 7.4648 12.339Z" fill="#888E9D"/>
     <path d="M18.9887 13.48C18.9887 16.94 16.9288 19 13.4688 19L13.4787 0C16.9287 0 18.9987 2.06 18.9887 5.52V13.48Z" fill="#888E9D"/>
   </svg>
 );
 
-const SideMenu = () => {
+const SideMenu = ({ isCollapsed, onToggle }) => {
   return (
     <Box
       sx={{
-        width: '72px',
+        width: isCollapsed ? '72px' : '200px',
         height: '100vh',
         backgroundColor: '#FBFBFB',
         borderRight: '1px solid #E1E1E1',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        pt: '18px', // Precise top padding
+        alignItems: isCollapsed ? 'center' : 'flex-start',
+        pt: '18px',
         pb: '20px',
+        px: isCollapsed ? 0 : '20px',
         position: { xs: 'relative', md: 'fixed' },
         left: 0,
         top: 0,
         zIndex: 1200,
+        transition: 'width 0.3s ease-in-out, padding 0.3s ease-in-out'
       }}
     >
-      {/* Top Sidebar On/Off Toggle Button */}
-      <Box sx={{ mb: '36px' }}>
-        <Box
+      {/* Top Sidebar Toggle Button & Logo */}
+      <Box 
+        sx={{ 
+          mb: '36px', 
+          width: '100%', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: isCollapsed ? 'center' : 'space-between',
+          gap: isCollapsed ? 0 : '42px',
+          px: isCollapsed ? 0 : '12px'
+        }}
+      >
+        {!isCollapsed && (
+          <Box 
+            component="img" 
+            src="/dashboard/logo.png" 
+            alt="Logo" 
+            sx={{ 
+              height: '22px', 
+              width: 'auto',
+              ml: '4px'
+            }} 
+          />
+        )}
+        <ButtonBase
+          onClick={onToggle}
           sx={{
             width: 36,
             height: 36,
@@ -143,58 +193,78 @@ const SideMenu = () => {
             justifyContent: 'center',
             cursor: 'pointer',
             transition: 'all 0.2s ease-in-out',
+            overflow: 'hidden',
             '&:hover': {
               backgroundColor: '#D9E4EC'
             }
           }}
         >
-          <ToggleIcon />
-        </Box>
+          <ToggleIcon isCollapsed={isCollapsed} />
+        </ButtonBase>
       </Box>
 
-      {/* Main Nav Group - Exact 12px gap */}
+      {/* Main Nav Group */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', width: '100%' }}>
-        <SidebarIcon icon={HomeIcon} active hasBackground />
-        <SidebarIcon icon={SearchIcon} />
-        <SidebarIcon icon={BookIcon} />
-        <SidebarIcon icon={CalendarIcon} />
-      </Box>
-
-      <Divider sx={{ width: '100%', my: '20px', borderColor: '#F0F0F0' }} />
-
-      {/* Tools Group - Exact 12px gap */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', width: '100%' }}>
-        <SidebarIcon icon={NoteIcon} />
-        <SidebarIcon icon={EditIcon} />
+        <SidebarIcon icon={HomeIcon} label="Home" active hasBackground isCollapsed={isCollapsed} />
+        <SidebarIcon icon={SearchIcon} label="Search" isCollapsed={isCollapsed} />
+        <SidebarIcon icon={BookIcon} label="Syllabus" isCollapsed={isCollapsed} />
+        <SidebarIcon icon={CalendarIcon} label="Calendar" isCollapsed={isCollapsed} />
       </Box>
 
       <Divider sx={{ width: '100%', my: '20px', borderColor: '#F0F0F0' }} />
 
-      {/* Social/Security Group - Exact 12px gap */}
+      {/* Tools Group */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', width: '100%' }}>
-        <SidebarIcon icon={TheaterIcon} />
-        <SidebarIcon icon={ShieldIcon} />
+        <SidebarIcon icon={NoteIcon} label="Notes" isCollapsed={isCollapsed} />
+        <SidebarIcon icon={EditIcon} label="Task Planner" isCollapsed={isCollapsed} />
+      </Box>
+
+      <Divider sx={{ width: '100%', my: '20px', borderColor: '#F0F0F0' }} />
+
+      {/* Social/Security Group */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', width: '100%' }}>
+        <SidebarIcon icon={TheaterIcon} label="Sessions" isCollapsed={isCollapsed} />
+        <SidebarIcon icon={ShieldIcon} label="Security" isCollapsed={isCollapsed} />
       </Box>
 
       {/* Profile & Logout Section at Bottom */}
       <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: '18px', alignItems: 'center', width: '100%' }}>
-        <SidebarIcon icon={LogoutIcon} />
+        <SidebarIcon icon={LogoutIcon} label="Logout" isCollapsed={isCollapsed} />
         
         <Box 
           sx={{ 
-            width: 40, 
-            height: 40, 
-            borderRadius: '50%', 
-            overflow: 'hidden',
-            border: '2px solid #FFFFFF',
-            boxShadow: '0px 2px 6px rgba(0,0,0,0.1)',
-            cursor: 'pointer'
+            width: isCollapsed ? 40 : '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            px: isCollapsed ? 0 : '12px',
+            justifyContent: isCollapsed ? 'center' : 'flex-start',
+            mb: 1
           }}
         >
-          <Avatar
-            src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2.25&w=256&h=256&q=80"
-            sx={{ width: '100%', height: '100%' }}
-          />
+          <Box 
+            sx={{ 
+              width: 40, 
+              height: 40, 
+              borderRadius: '50%', 
+              overflow: 'hidden',
+              border: '2px solid #FFFFFF',
+              boxShadow: '0px 2px 6px rgba(0,0,0,0.1)',
+              cursor: 'pointer',
+              flexShrink: 0
+            }}
+          >
+            <Avatar
+              src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2.25&w=256&h=256&q=80"
+              sx={{ width: '100%', height: '100%' }}
+            />
+          </Box>
+          {!isCollapsed && (
+            <Box>
+              <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#2A2A2A', lineHeight: 1.2 }}>Anita Singh</Typography>
+              <Typography sx={{ fontSize: '12px', color: '#888E9D' }}>Premium User</Typography>
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>

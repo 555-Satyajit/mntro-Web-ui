@@ -2,7 +2,7 @@ import React from 'react';
 import { AppBar, Toolbar, Box, Button, TextField, IconButton, Badge, InputAdornment } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 
-const TopNavBar = ({ onMenuToggle }) => {
+const TopNavBar = ({ onMenuToggle, isCollapsed }) => {
   return (
     <AppBar
       position="fixed"
@@ -11,9 +11,10 @@ const TopNavBar = ({ onMenuToggle }) => {
         backgroundColor: '#FFFFFF',
         borderBottom: '1px solid #E1E1E1',
         borderRadius: 0,
-        width: { xs: '100%', md: 'calc(100% - 72px)' },
-        ml: { xs: 0, md: '72px' },
+        width: { xs: '100%', md: `calc(100% - ${isCollapsed ? '72px' : '200px'})` },
+        ml: { xs: 0, md: isCollapsed ? '72px' : '200px' },
         zIndex: 1100,
+        transition: 'width 0.3s ease-in-out, margin-left 0.3s ease-in-out'
       }}
     >
       <Toolbar 
@@ -45,7 +46,14 @@ const TopNavBar = ({ onMenuToggle }) => {
             borderRadius: '8px',
             display: 'flex',
             alignItems: 'center',
-            px: '12px' // Padding for the icon
+            px: '12px',
+            transition: 'all 0.3s ease',
+            border: '1px solid transparent',
+            '&:focus-within': {
+              backgroundColor: '#FFFFFF',
+              borderColor: '#37A7D5',
+              boxShadow: '0px 0px 8px rgba(55, 167, 213, 0.2)'
+            }
           }}
         >
           {/* Custom Search Icon */}
