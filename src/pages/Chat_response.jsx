@@ -58,7 +58,15 @@ const Typewriter = ({ text, delay = 15, onComplete, start = true }) => {
   const [hasFinished, setHasFinished] = useState(false);
 
   useEffect(() => {
-    if (!start || !text || hasFinished) return;
+    if (!start || hasFinished) return;
+
+    if (text === '') {
+      const timer = setTimeout(() => {
+        setHasFinished(true);
+        if (onComplete) onComplete();
+      }, delay);
+      return () => clearTimeout(timer);
+    }
 
     const intervalId = setInterval(() => {
       setCurrentText(prev => {
