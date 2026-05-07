@@ -51,16 +51,21 @@ const SourceArrow = () => (
 
 const ChatResponse = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  const handleSidebarToggle = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
   return (
     <Box sx={{ display: 'flex', backgroundColor: '#FEFEFE', minHeight: '100vh' }}>
       {/* Sidebar for Desktop */}
       <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-        <SideMenu />
+        <SideMenu isCollapsed={isSidebarCollapsed} onToggle={handleSidebarToggle} />
       </Box>
 
       {/* Sidebar Drawer for Mobile/Tablet */}
@@ -71,14 +76,20 @@ const ChatResponse = () => {
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: '72px', border: 'none' },
+          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: '200px', border: 'none' },
         }}
       >
-        <SideMenu />
+        <SideMenu isCollapsed={false} onToggle={handleDrawerToggle} />
       </Drawer>
 
-      <Box sx={{ flexGrow: 1, ml: { xs: 0, md: '72px' }, width: '100%', position: 'relative' }}>
-        <TopNavBar onMenuToggle={handleDrawerToggle} />
+      <Box sx={{ 
+        flexGrow: 1, 
+        ml: { xs: 0, md: isSidebarCollapsed ? '72px' : '200px' }, 
+        width: '100%', 
+        position: 'relative',
+        transition: 'margin-left 0.3s ease-in-out'
+      }}>
+        <TopNavBar onMenuToggle={handleDrawerToggle} isCollapsed={isSidebarCollapsed} />
         
         <Box sx={{ 
           pt: '87px', // 64px (AppBar) + 23px (Gap)
